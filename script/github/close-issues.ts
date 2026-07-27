@@ -12,12 +12,7 @@ if (!token) {
 
 const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
 const agentLogin = "opencode-agent[bot]"
-const teamMembers = new Set(
-  (await Bun.file(new URL("../../.github/TEAM_MEMBERS", import.meta.url)).text())
-    .split("\n")
-    .map((line) => line.trim().toLowerCase())
-    .filter(Boolean),
-)
+const teamMembers = new Set<string>()
 const teamAssociations = new Set(["OWNER", "MEMBER"])
 
 type Issue = {
