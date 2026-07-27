@@ -512,7 +512,15 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
       })
     })
 
-    const enriched = createMemo(() => server.projects.list().map(enrich))
+    const enriched = createMemo(() => {
+      const stored = server.projects.list()
+      const storedKeys = new Set(stored.map((p) => pathKey(p.worktree)))
+      const closedKeys = new Set(server.projects.recentlyClosed().map(pathKey))
+      const fromServer = serverSync()
+        .data.project.filter((p) => !storedKeys.has(pathKey(p.worktree)) && !closedKeys.has(pathKey(p.worktree)))
+        .map((p) => enrich({ worktree: p.worktree, expanded: false }))
+      return [...stored.map(enrich), ...fromServer]
+    })
     const list = createMemo(() => {
       const projects = enriched()
       return projects.map((project) => {
@@ -586,7 +594,7 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
         sessionTimer = window.setTimeout(() => {
           sessionTimer = undefined
           void Promise.all(
-            server.projects.list().map((project) => {
+            enriched().map((project) => {
               return serverSync().project.loadSessions(project.worktree)
             }),
           )
